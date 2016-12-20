@@ -1,3 +1,6 @@
 [submodule "WurstDB"]
 	path = WurstDB
 	url = https://github.com/Freiwurst/WurstDB.git
+[submodule "PCA9685"]
+	path = PCA9685
+	url = https://github.com/adafruit/Adafruit_Python_PCA9685.git
