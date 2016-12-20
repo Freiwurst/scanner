@@ -1,0 +1,5 @@
+adafruit-pca9685
+flask
+json
+sqlite3
+requests
