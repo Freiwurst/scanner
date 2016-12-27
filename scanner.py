@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import division
+import time
 import Adafruit_PCA9685
 from WurstDB.wurstApiClient import DbClient
 
