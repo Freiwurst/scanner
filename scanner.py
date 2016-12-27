@@ -58,7 +58,12 @@ for event in dev.read_loop():
         if data.keystate == 1:  # Down events only
             if data.scancode == 28:
                 print(code)
-                code=code[-64:].lower()
+                if len(code) >= 64:
+                    code=code[-64:].lower()
+                elif len(code) == 11:
+                    code=code[11:].lower()  # kill checksum
+                else:
+                    continue
                 r = c.useCode(code)
                 log.info("%s is %s"%(code,str(r)))
                 if r:
