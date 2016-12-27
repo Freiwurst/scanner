@@ -71,6 +71,10 @@ for event in dev.read_loop():
                     time.sleep(3)
                     pwm.set_pwm(0, 0, servo_min)
                     print('Wurst deploment done')
+                else:
+                    pwm.set_pwm(1, 0, servo_max)
+                    time.sleep(7)
+                    pwm.set_pwm(1, 0, servo_min+50)
                 code = ''
             else:
                 if data.scancode not in scancodes:
