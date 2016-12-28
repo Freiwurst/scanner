@@ -60,8 +60,8 @@ for event in dev.read_loop():
                 print(code)
                 if len(code) >= 64:
                     code=code[-64:].lower()
-                elif len(code) == 11:
-                    code=code[11:].lower()  # kill checksum
+                elif len(code) == 12:
+                    code=code[:11].lower()  # kill checksum
                 else:
                     continue
                 r = c.useCode(code)
