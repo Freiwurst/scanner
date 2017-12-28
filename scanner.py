@@ -8,7 +8,7 @@ from WurstDB.wurstApiClient import DbClient
 
 import evdev
 from evdev import InputDevice, categorize  # import * is evil :)
-dev = InputDevice('/dev/input/by-id/usb-Honeywell_Imaging___Mobility_1900_12053B1FA7-event-kbd')
+dev = InputDevice('/dev/input/by-id/usb-Honeywell_Imaging___Mobility_1900_12054B0617-event-kbd')
 
 # Provided as an example taken from my own keyboard attached to a Centos 6 box:
 scancodes = {
@@ -31,7 +31,7 @@ pwm = Adafruit_PCA9685.PCA9685()
 
 # Configure min and max servo pulse lengths
 servo_min = 235  # Min pulse length out of 4096
-servo_max = 490  # Max pulse length out of 4096
+servo_max = 450  # Max pulse length out of 4096
 
 # Helper function to make setting a servo pulse width simpler.
 def set_servo_pulse(channel, pulse):
@@ -63,6 +63,7 @@ for event in dev.read_loop():
                 elif len(code) == 12:
                     code=code[:11].lower()  # kill checksum
                 else:
+                    log.info("%s is some random code"%(code,str(r)))
                     continue
                 r = c.useCode(code)
                 log.info("%s is %s"%(code,str(r)))
