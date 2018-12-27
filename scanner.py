@@ -1,15 +1,39 @@
 #!/usr/bin/env python3
+import pigpio
 import logging
 from systemd.journal import JournalHandler
 import sys
 import time
 import Adafruit_PCA9685
 from WurstDB.wurstApiClient import DbClient
+import threading
 
 import evdev
 from evdev import InputDevice, categorize  # import * is evil :)
-dev = InputDevice('/dev/input/by-id/usb-Honeywell_Imaging___Mobility_1900_12054B0617-event-kbd')
+dev = InputDevice('/dev/input/by-id/usb-NEWTOLOGIC_NEWTOLOGIC-event-kbd')
 
+pi = pigpio.pi()
+shooterPin = 4
+signPin = 18
+doNotDie = True
+def scanner():
+    scannerMin = 510
+    scannerPin = 27
+    scannerMax = 1000
+    scannerState = True
+    lastTime = time.time()
+    pi2 = pigpio.pi()
+    while(True):
+        if (time.time() - lastTime > 1):
+            log.info('now')
+            if scannerState:
+                scannerState = False
+                pi2.set_servo_pulsewidth(scannerPin, scannerMax)
+            else:
+                scannerState = True 
+                pi2.set_servo_pulsewidth(scannerPin, scannerMin)
+            lastTime = time.time()
+            log.info('servo done')
 # Provided as an example taken from my own keyboard attached to a Centos 6 box:
 scancodes = {
     # Scancode: ASCIICode
@@ -23,64 +47,54 @@ scancodes = {
 
 dev.grab()
 
-# Initialise the PCA9685 using the default address (0x40).
-pwm = Adafruit_PCA9685.PCA9685()
-
-# Alternatively specify a different address and/or bus:
-#pwm = Adafruit_PCA9685.PCA9685(address=0x41, busnum=2)
-
 # Configure min and max servo pulse lengths
-servo_min = 235  # Min pulse length out of 4096
-servo_max = 450  # Max pulse length out of 4096
+servo_min = 1100  # Min pulse length out of 4096
+servo_max = 1980  # Max pulse length out of 4096
 
-# Helper function to make setting a servo pulse width simpler.
-def set_servo_pulse(channel, pulse):
-    pulse_length = 1000000    # 1,000,000 us per second
-    pulse_length //= 50       # 60 Hz
-    print('{0}us per period'.format(pulse_length))
-    pulse_length //= 4096     # 12 bits of resolution
-    print('{0}us per bit'.format(pulse_length))
-    pulse *= 1000
-    pulse //= pulse_length
-    pwm.set_pwm(channel, 0, pulse)
 
 # Set frequency to 60hz, good for servos.
-pwm.set_pwm_freq(50)
 code = ''
 c = DbClient('None',sys.argv[1])
 log = logging.getLogger('scanner')
 log.addHandler(JournalHandler())
 log.setLevel(logging.INFO)
 log.info('up and running')
+pi.set_PWM_frequency(shooterPin, 50)
+pi.set_PWM_frequency(signPin, 50)
+pi.set_PWM_range(signPin, 1000)
+
+time.sleep(3)
+
 for event in dev.read_loop():
     if event.type == evdev.ecodes.EV_KEY:
         data = evdev.categorize(event)  # Save the event temporarily to introspect it
         if data.keystate == 1:  # Down events only
             if data.scancode == 28:
+
+                log.info('scancode 28  #%s# '%(code,))
                 print(code)
                 if len(code) >= 64:
                     code=code[-64:].lower()
                 elif len(code) == 12:
                     code=code[:11].lower()  # kill checksum
                 else:
-                    log.info("%s is some random code"%(code,str(r)))
                     continue
                 r = c.useCode(code)
                 log.info("%s is %s"%(code,str(r)))
                 if r:
                     print('Wurst deploment in process')
-                    pwm.set_pwm(0, 0, servo_max)
+                    pi.set_servo_pulsewidth(shooterPin, servo_max)
                     time.sleep(3)
-                    pwm.set_pwm(0, 0, servo_max)
+                    pi.set_servo_pulsewidth(shooterPin, servo_max)
                     time.sleep(7)
-                    pwm.set_pwm(0, 0, servo_min)
+                    pi.set_servo_pulsewidth(shooterPin, servo_min)
                     time.sleep(3)
-                    pwm.set_pwm(0, 0, servo_min)
+                    pi.set_servo_pulsewidth(shooterPin, servo_min)
                     print('Wurst deploment done')
                 else:
-                    pwm.set_pwm(1, 0, servo_max)
+                    pi.set_servo_pulsewidth(signPin, servo_max)
                     time.sleep(7)
-                    pwm.set_pwm(1, 0, servo_min+50)
+                    pi.set_servo_pulsewidth(signPin, servo_min)
                 code = ''
             else:
                 if data.scancode not in scancodes:
